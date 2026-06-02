@@ -1,3 +1,7 @@
+## 1.6.2-wip
+
+* Add `BrowserCredentialsMode` and `BrowserClient.credentialsMode` to support the `omit` browser fetch credentials mode. Deprecate `withCredentials`.
+
 ## 1.6.1-wip
 
 * Clarified the behavior of response headers in API documentation comments.
