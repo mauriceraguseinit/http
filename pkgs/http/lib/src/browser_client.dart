@@ -35,9 +35,39 @@ BaseClient createClient() {
 
 @JS('fetch')
 external JSPromise<Response> _fetch(
-  RequestInfo input, [
-  RequestInit init,
-]);
+    RequestInfo input, [
+      RequestInit init,
+    ]);
+
+/// The browser `fetch` credentials mode used by [BrowserClient].
+///
+/// Controls whether the browser sends credentials such as cookies, TLS client
+/// certificates, or authorization headers with a request.
+///
+/// See also:
+/// - https://fetch.spec.whatwg.org/#requestcredentials
+enum BrowserCredentialsMode {
+  /// Never send credentials with the request and never include credentials in
+  /// the response.
+  ///
+  /// This corresponds to the browser `fetch` credentials mode `omit`.
+  omit('omit'),
+
+  /// Send credentials for same-origin requests only.
+  ///
+  /// This corresponds to the browser `fetch` credentials mode `same-origin`.
+  sameOrigin('same-origin'),
+
+  /// Always send credentials, even for cross-origin requests.
+  ///
+  /// This corresponds to the browser `fetch` credentials mode `include`.
+  include('include');
+
+  const BrowserCredentialsMode(this._value);
+
+  /// The value passed to the browser `fetch` `RequestInit.credentials` field.
+  final String _value;
+}
 
 /// A `package:web`-based HTTP client that runs in the browser and is backed by
 /// [`window.fetch`](https://fetch.spec.whatwg.org/).
@@ -52,11 +82,49 @@ external JSPromise<Response> _fetch(
 /// Responses are streamed but requests are not. A request will only be sent
 /// once all the data is available.
 class BrowserClient extends BaseClient {
+  /// Create a [BrowserClient].
+  ///
+  /// By default, credentials are sent for same-origin requests only, which
+  /// matches the previous default behavior when [withCredentials] was `false`.
+  BrowserClient({
+    this.credentialsMode = BrowserCredentialsMode.sameOrigin,
+  });
+
+  /// The browser `fetch` credentials mode used for requests.
+  ///
+  /// Defaults to [BrowserCredentialsMode.sameOrigin], which matches the
+  /// previous behavior when [withCredentials] was `false`.
+  BrowserCredentialsMode credentialsMode;
+
   /// Whether to send credentials such as cookies or authorization headers for
   /// cross-site requests.
   ///
   /// Defaults to `false`.
-  bool withCredentials = false;
+  ///
+  /// This property is deprecated because it can only represent two of the three
+  /// browser `fetch` credentials modes (`same-origin` and `include`). Use
+  /// [credentialsMode] instead to also support [BrowserCredentialsMode.omit].
+  ///
+  /// Reading this property returns `true` only when [credentialsMode] is
+  /// [BrowserCredentialsMode.include].
+  @Deprecated('Use credentialsMode instead.')
+  bool get withCredentials =>
+      credentialsMode == BrowserCredentialsMode.include;
+
+  /// Whether to send credentials such as cookies or authorization headers for
+  /// cross-site requests.
+  ///
+  /// Setting this to `true` sets [credentialsMode] to
+  /// [BrowserCredentialsMode.include].
+  ///
+  /// Setting this to `false` sets [credentialsMode] to
+  /// [BrowserCredentialsMode.sameOrigin].
+  @Deprecated('Use credentialsMode instead.')
+  set withCredentials(bool value) {
+    credentialsMode = value
+        ? BrowserCredentialsMode.include
+        : BrowserCredentialsMode.sameOrigin;
+  }
 
   bool _isClosed = false;
   final _openRequestAbortControllers = <AbortController>[];
@@ -85,7 +153,7 @@ class BrowserClient extends BaseClient {
         RequestInit(
           method: request.method,
           body: bodyBytes.isNotEmpty ? bodyBytes.toJS : null,
-          credentials: withCredentials ? 'include' : 'same-origin',
+          credentials: credentialsMode._value,
           headers: {
             if (request.contentLength case final contentLength?)
               'content-length': contentLength,
