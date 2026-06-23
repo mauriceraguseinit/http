@@ -35,35 +35,37 @@ BaseClient createClient() {
 
 @JS('fetch')
 external JSPromise<Response> _fetch(
-    RequestInfo input, [
-      RequestInit init,
-    ]);
+  RequestInfo input, [
+  RequestInit init,
+]);
 
-/// The browser `fetch` credentials mode used by [BrowserClient].
+/// The browser `fetch` credentials mode represented by [RequestCredentials].
 ///
 /// Controls whether the browser sends credentials such as cookies, TLS client
 /// certificates, or authorization headers with a request.
 ///
 /// See also:
 /// - https://fetch.spec.whatwg.org/#requestcredentials
-enum BrowserCredentialsMode {
+enum RequestCredentials {
   /// Never send credentials with the request and never include credentials in
   /// the response.
   ///
   /// This corresponds to the browser `fetch` credentials mode `omit`.
   omit('omit'),
 
-  /// Send credentials for same-origin requests only.
+  /// Send credentials for same-origin requests only and only include
+  /// credentials in same-origin replies.
   ///
   /// This corresponds to the browser `fetch` credentials mode `same-origin`.
   sameOrigin('same-origin'),
 
-  /// Always send credentials, even for cross-origin requests.
+  /// Always send credentials, even for cross-origin requests, and include them
+  /// in all responses.
   ///
   /// This corresponds to the browser `fetch` credentials mode `include`.
   include('include');
 
-  const BrowserCredentialsMode(this._value);
+  const RequestCredentials(this._value);
 
   /// The value passed to the browser `fetch` `RequestInit.credentials` field.
   final String _value;
@@ -86,15 +88,18 @@ class BrowserClient extends BaseClient {
   ///
   /// By default, credentials are sent for same-origin requests only, which
   /// matches the previous default behavior when [withCredentials] was `false`.
-  BrowserClient({
-    this.credentialsMode = BrowserCredentialsMode.sameOrigin,
-  });
+  BrowserClient(
+      {RequestCredentials requestCredentials = RequestCredentials.sameOrigin})
+      : _requestCredentials = requestCredentials;
+
+  /// The internal browser `fetch` credentials mode used for requests.
+  RequestCredentials _requestCredentials;
 
   /// The browser `fetch` credentials mode used for requests.
   ///
-  /// Defaults to [BrowserCredentialsMode.sameOrigin], which matches the
+  /// Defaults to [RequestCredentials.sameOrigin], which matches the
   /// previous behavior when [withCredentials] was `false`.
-  BrowserCredentialsMode credentialsMode;
+  RequestCredentials get requestCredentials => _requestCredentials;
 
   /// Whether to send credentials such as cookies or authorization headers for
   /// cross-site requests.
@@ -103,27 +108,25 @@ class BrowserClient extends BaseClient {
   ///
   /// This property is deprecated because it can only represent two of the three
   /// browser `fetch` credentials modes (`same-origin` and `include`). Use
-  /// [credentialsMode] instead to also support [BrowserCredentialsMode.omit].
+  /// [_requestCredentials] instead to also support [RequestCredentials.omit].
   ///
-  /// Reading this property returns `true` only when [credentialsMode] is
-  /// [BrowserCredentialsMode.include].
-  @Deprecated('Use credentialsMode instead.')
-  bool get withCredentials =>
-      credentialsMode == BrowserCredentialsMode.include;
+  /// Reading this property returns `true` only when [_requestCredentials] is
+  /// [RequestCredentials.include].
+  @Deprecated('Use requestCredentials instead.')
+  bool get withCredentials => _requestCredentials == RequestCredentials.include;
 
   /// Whether to send credentials such as cookies or authorization headers for
   /// cross-site requests.
   ///
-  /// Setting this to `true` sets [credentialsMode] to
-  /// [BrowserCredentialsMode.include].
+  /// Setting this to `true` sets [_requestCredentials] to
+  /// [RequestCredentials.include].
   ///
-  /// Setting this to `false` sets [credentialsMode] to
-  /// [BrowserCredentialsMode.sameOrigin].
-  @Deprecated('Use credentialsMode instead.')
+  /// Setting this to `false` sets [_requestCredentials] to
+  /// [RequestCredentials.sameOrigin].
+  @Deprecated('Use the requestCredentials constructor parameter instead.')
   set withCredentials(bool value) {
-    credentialsMode = value
-        ? BrowserCredentialsMode.include
-        : BrowserCredentialsMode.sameOrigin;
+    _requestCredentials =
+        value ? RequestCredentials.include : RequestCredentials.sameOrigin;
   }
 
   bool _isClosed = false;
@@ -153,7 +156,7 @@ class BrowserClient extends BaseClient {
         RequestInit(
           method: request.method,
           body: bodyBytes.isNotEmpty ? bodyBytes.toJS : null,
-          credentials: credentialsMode._value,
+          credentials: _requestCredentials._value,
           headers: {
             if (request.contentLength case final contentLength?)
               'content-length': contentLength,

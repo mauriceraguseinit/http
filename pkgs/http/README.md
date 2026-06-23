@@ -266,6 +266,9 @@ Some well-supported implementations are:
 | [`package:cronet_http`][cronethttp] — [`CronetClient`][cronetclient] | Android | Flutter | ✅︎ | ✅︎ | ― |
 | [`package:fetch_client`][fetch] — [`FetchClient`][fetchclient] | Web | Dart, Flutter | ✅︎ | ✅︎ | ✅︎ |
 
+> [!NOTE]
+> [`BrowserClient`][browserclient] allows you to configure the browser `fetch` credentials mode (e.g., `omit`, `same-origin`, `include`) by passing the `requestCredentials` parameter to its constructor.
+
 > [!TIP]
 > If you are writing a Dart package or Flutter plugin that uses
 > `package:http`, you should not depend on a particular [`Client`][client]
