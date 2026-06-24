@@ -86,8 +86,7 @@ enum RequestCredentials {
 class BrowserClient extends BaseClient {
   /// Create a [BrowserClient].
   ///
-  /// By default, credentials are sent for same-origin requests only, which
-  /// matches the previous default behavior when [withCredentials] was `false`.
+  /// By default, credentials are sent for same-origin requests only.
   BrowserClient(
       {RequestCredentials requestCredentials = RequestCredentials.sameOrigin})
       : _requestCredentials = requestCredentials;
