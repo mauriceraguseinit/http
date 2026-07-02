@@ -84,21 +84,15 @@ enum RequestCredentials {
 /// Responses are streamed but requests are not. A request will only be sent
 /// once all the data is available.
 class BrowserClient extends BaseClient {
+  /// The internal browser `fetch` credentials mode used for requests.
+  RequestCredentials _requestCredentials;
+
   /// Create a [BrowserClient].
   ///
   /// By default, credentials are sent for same-origin requests only.
   BrowserClient(
       {RequestCredentials requestCredentials = RequestCredentials.sameOrigin})
       : _requestCredentials = requestCredentials;
-
-  /// The internal browser `fetch` credentials mode used for requests.
-  RequestCredentials _requestCredentials;
-
-  /// The browser `fetch` credentials mode used for requests.
-  ///
-  /// Defaults to [RequestCredentials.sameOrigin], which matches the
-  /// previous behavior when [withCredentials] was `false`.
-  RequestCredentials get requestCredentials => _requestCredentials;
 
   /// Whether to send credentials such as cookies or authorization headers for
   /// cross-site requests.
@@ -107,11 +101,11 @@ class BrowserClient extends BaseClient {
   ///
   /// This property is deprecated because it can only represent two of the three
   /// browser `fetch` credentials modes (`same-origin` and `include`). Use
-  /// [_requestCredentials] instead to also support [RequestCredentials.omit].
+  /// the constructor parameter instead to also support [RequestCredentials.omit].
   ///
   /// Reading this property returns `true` only when [_requestCredentials] is
   /// [RequestCredentials.include].
-  @Deprecated('Use requestCredentials instead.')
+  @Deprecated('Use the requestCredentials constructor parameter instead.')
   bool get withCredentials => _requestCredentials == RequestCredentials.include;
 
   /// Whether to send credentials such as cookies or authorization headers for
